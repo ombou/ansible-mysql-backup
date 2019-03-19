@@ -1,0 +1,48 @@
+#!/bin/sh
+
+USER="{{ mysql_backup_dbuser }}"
+PASS="{{ '' if mysql_backup_nopass else "--password=" + mysql_backup_dbpass|string }}"
+BACKUP_ROOT="{{ mysql_backup_dir }}"
+RETENTION_DAYS={{ mysql_backup_retention_days }}
+MYSQLDUMP="/usr/bin/mysqldump"
+SKIP_DB="{{ mysql_backup_skip_databases|join('|') }}"
+{% if mysql_backup_db_names is defined %}
+DB_NAMES="{{ mysql_backup_db_names|join(' ') }}"
+{% endif %}
+DUMP_OPTIONS="{{ mysql_backup_dump_options }}"
+
+HOST=`uname -n`
+DATE=`date "+%Y%m%d"`
+BACKUP_DIR="${BACKUP_ROOT}/${DATE}"
+
+umask 077
+logger -t backup "Starting MySQL backup"
+mkdir -p -m 0700 ${BACKUP_DIR}
+
+if [[ -z $DB_NAMES ]]; then
+    DB_NAMES=`echo "show databases;" | mysql -s --user=${USER} ${PASS} grep -vE "${SKIP_DB}"`
+fi
+
+for DB in $DB_NAMES; do
+        DUMP_FILE="${BACKUP_DIR}/${DB}.sql.gz"
+        logger -t backup "Dumping database '${DB}' to ${DUMP_FILE}"
+	(
+	echo "-- mysqldump - ${DATE} :: ${DB}";
+	echo "SET AUTOCOMMIT = 0;";
+	echo "SET FOREIGN_KEY_CHECKS = 0;";
+	${MYSQLDUMP} --user=${USER} ${PASS} ${DUMP_OPTIONS} ${DB} ;
+	echo "SET FOREIGN_KEY_CHECKS = 1;";
+	echo "COMMIT;";
+	echo "SET AUTOCOMMIT = 1;";
+	) | gzip -c --rsyncable --best > ${DUMP_FILE}
+done
+
+if [ ${RETENTION_DAYS} -gt 1 ]; then
+	logger -t backup "Cleanup MySQL backups older than ${RETENTION_DAYS} days"
+	find ${BACKUP_ROOT} -mindepth 1 -type d -daystart -mtime +${RETENTION_DAYS} -printf "deleting %p\n" | logger -t backup
+	find ${BACKUP_ROOT} -mindepth 1 -type d -daystart -mtime +${RETENTION_DAYS} -printf "rm -rf %p\n" | sh
+fi
+
+logger -t backup "Finishing MySQL backup"
+
+exit 0

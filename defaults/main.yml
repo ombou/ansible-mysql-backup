@@ -1,0 +1,15 @@
+---
+mysql_backup_enabled: yes
+mysql_backup_dbuser: root
+mysql_backup_nopass: true
+mysql_backup_dbpass:
+mysql_backup_script_user: admin
+mysql_backup_dir: /srv/mysql/backup
+mysql_backup_retention_days: 3
+mysql_backup_dump_options: "--opt --single-transaction"
+mysql_backup_db_names: []
+mysql_backup_skip_databases:
+    - information_schema
+    - performance_schema
+    - test
+    - 'lost\+found'

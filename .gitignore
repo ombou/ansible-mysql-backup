@@ -1,0 +1,15 @@
+
+# other files
+.svn
+/.rules
+.idea
+**/nbproject/
+.php_cs.cache
+cache.properties
+*~
+*.swp
+*.cfg
+!ansible.cfg
+*.retry
+.vault_key
+*.env

@@ -1,0 +1,26 @@
+---
+- name: 'Copy dump script'
+  template:
+    src: "templates/backup_mysql.j2"
+    dest: "/home/{{ mysql_backup_script_user }}/mysqldump.sh"
+    owner: '{{ mysql_backup_script_user }}'
+    mode: "u=rx"
+
+- name: 'Create backup dir'
+  file:
+    path: '{{ mysql_backup_dir }}'
+    state: 'directory'
+    recurse: yes
+
+- file:
+    path: '{{ mysql_backup_dir }}'
+    state: 'directory'
+    owner: '{{ mysql_backup_script_user }}'
+    group: root
+
+- name: 'Copy dump check script'
+  template:
+    src: "templates/backup_check.j2"
+    dest: "/home/{{ mysql_backup_script_user }}/backup_check.sh"
+    owner: '{{ mysql_backup_script_user }}'
+    mode: "u=rx"

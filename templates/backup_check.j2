@@ -1,0 +1,22 @@
+#!/bin/sh
+
+BACKUP_ROOT="{{ mysql_backup_dir }}"
+
+HOST=`uname -n`
+DATE=`date "+%Y%m%d"`
+BACKUP_DIR="${BACKUP_ROOT}/${DATE}"
+DB_NAME=$1
+DUMP_FILE="${BACKUP_DIR}/${DB_NAME}.sql.gz"
+
+if [ ! -f $DUMP_FILE ]; then
+  echo "NOT_OK"
+  exit 1
+fi
+
+if zgrep "Dump completed" ${DUMP_FILE} | grep -q 'Dump completed'; then
+  echo "OK"
+  exit 0
+else
+  echo "NOT_OK"
+  exit 1
+fi
